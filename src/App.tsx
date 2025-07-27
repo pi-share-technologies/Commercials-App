@@ -1,110 +1,106 @@
-import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { io, Socket } from 'socket.io-client'
+import useSocket from './hooks/useSocket'
 
-type Commercial = {
-  id: string
-  name: string
-  price: number
-  description: string
-  image: string
-}
-
-const Container = styled.main.attrs({
+const AppContainer = styled.main.attrs({
   className: 'container',
 })`
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 2rem;
-  font-family: sans-serif;
-  width: 100%;
   margin: 0 auto;
+  font-family: sans-serif;
+  max-width: 100%;
+  overflow-x: hidden;
 `
 
 const Title = styled.h1.attrs({
   className: 'title',
 })`
   margin-bottom: 1rem;
+  font-size: 2rem;
 `
+
+interface PriceProps {
+  strikethrough?: boolean
+  membersDiscount?: boolean
+}
 
 const Price = styled.p.attrs({
   className: 'price',
-})`
-  font-weight: bold;
-  margin: 0.5rem 0;
+})<PriceProps>`
+  font-weight: ${({ membersDiscount }: PriceProps) => (membersDiscount ? 'bold' : 'normal')};
+  color: ${({ strikethrough, membersDiscount }: PriceProps) => (strikethrough ? '#ff000a' : membersDiscount ? '#3bd100' :  'white')};
+  margin:  0;
+  ${({ strikethrough }: PriceProps) => strikethrough && 'text-decoration: line-through;'}
+  font-size: ${({ membersDiscount }: PriceProps) => (membersDiscount ? '22px' : '18px')};
 `
 
-const Image = styled.img.attrs({
+const ProductImage = styled.img.attrs({
   className: 'image',
 })`
-  max-width: 100%;
+  max-width: 400px;
   height: auto;
   border-radius: 4px;
 `
 
-const List = styled.ul.attrs({
-  className: 'list',
-})`
-  list-style: none;
-  padding: 0;
-  width: 100%;
-  max-width: 600px;
-`
+interface ProductItemProps {
+  visible: boolean
+}
 
-const Item = styled.li.attrs({
-  className: 'item',
-})`
-  background: #f2f2f2;
+const ProductItem = styled.li.attrs({className: "ProductItem"})<ProductItemProps>`
+  background: rgba(255, 255, 255, 0.3);
   margin-bottom: 0.75rem;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  opacity: ${({ visible }) => (visible ? 1 : 0)};
+  transition: opacity 0.2s ease-in-out;
+  width: 100%;
+  max-width: 600px;
+  height: 800px;
+
+  strong {
+    font-size: 3rem;
+    text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
+    text-transform: capitalize;
+    margin-bottom: 1rem;
+  }
+`
+
+const DescriptionText = styled.p.attrs({
+  className: 'DescriptionText',
+})`
+  margin: 1.5rem 0;
+  text-align: center;
+  text-wrap: balance;
+  height: 10rem;
 `
 
 function App() {
-  const [commercial, setCommercial] = useState<Commercial | null>(null)
-  
-  const testURL = 'http://172.16.10.92:4000'
-
-  useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL ?? testURL // default to same origin
-    const socket: Socket = io(backendUrl ?? undefined, {
-      transports: ['websocket'],
-    })
-
-    socket.on('connect', () => {
-      console.info('Socket connected', socket.id)
-    })
-
-    socket.on('commercial', (data: Commercial) => {
-      // setCommercials((prev) => [data, ...prev])
-      setCommercial(data)
-      console.log(data)
-    })
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
+    const {commercial} = useSocket()
+    const {name, price, discountPrice, memberPrice, description, image} = commercial ?? {}
 
   return (
-    <Container>
+    <AppContainer>
       <Title>Commercials Feed</Title>
       {!commercial && <p>No commercials received yet.</p>}
-      <List>
-        {commercial && (
-          <Item>
-            <strong>{commercial.name}</strong>
-            <Price>${commercial.price.toFixed(2)}</Price>
-            <p>{commercial.description}</p>
-            <Image src={commercial.image} alt={commercial.name} />
-          </Item>
-        )}
-      </List>
-    </Container>
+        {/* {commercial && ( */}
+      <ProductItem visible={!!commercial} >
+          <strong>{name}</strong>
+          { !!commercial && 
+          <>
+          <Price strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
+          <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
+          <Price membersDiscount>Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}</Price>
+          </>
+          }
+          <DescriptionText>{description}</DescriptionText>
+          <ProductImage src={image} alt={name} />
+      </ProductItem>
+    </AppContainer>
   );
 }
 
