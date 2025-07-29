@@ -5,13 +5,12 @@ import products from "../data/products"
 
 
 const useSocket = () => {
-    const testURL = 'http://172.16.10.92:4000'
 
     const [product, setProduct] = useState<Product | null>(null)
     const timeoutRef = useRef<number | null>(null)
   
     useEffect(() => {
-      const backendUrl: string = import.meta.env.VITE_BACKEND_URL ?? testURL // default to same origin
+      const backendUrl: string = import.meta.env.VITE_SOCKET_URL ?? '' 
       const socket: Socket = io(backendUrl, { transports: ['websocket']})
   
       socket.on('connect', () => {
@@ -28,7 +27,7 @@ const useSocket = () => {
         console.log(data)
         timeoutRef.current = window.setTimeout(() => {
         setProduct(null)
-        }, 5000)
+        }, 2000)
       })
 
       //* Receives a product id from the backend and returns the product object
@@ -41,26 +40,25 @@ const useSocket = () => {
             setProduct(product)
           }
         timeoutRef.current = window.setTimeout(() => {
-        }, 5000)
+          setProduct(null)
+        }, 2000)
       })
 
       //* Receives a product label from the backend and returns the product object (or the first product if not found)
       socket.on("productLabel", (productLabel: string) => {
         console.log(`Label received from kafka: ${productLabel}`)
         console.log('Now: ', new Date().toLocaleString())
-        // console.log('Received Date/Time: ', new Date(productLabel))
-        // console.log(`diff: ${new Date().getTime() - new Date(productLabel).getTime()}ms`)
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current)
           }
-        //!  const product = products.find(product => product.label === productLabel) ?? products[0]
-        const product = products[0]
-          console.log({productFromUseSocket: product})
+        const product = products.find(product => product.label === productLabel)
+        console.log({product: product ?? "not in the list"})
+
         if(product) {
             setProduct(product)
             timeoutRef.current = window.setTimeout(() => {
             setProduct(null)
-            }, 5000)
+            }, 2000)
         }
       })
   

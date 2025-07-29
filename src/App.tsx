@@ -1,5 +1,7 @@
 import styled from 'styled-components'
 import useSocket from './hooks/useSocket'
+import useProductPreloader from './hooks/useProductPreloader'
+import useFieldId from './hooks/useFieldId'
 
 const AppContainer = styled.main.attrs({
   className: 'container',
@@ -40,8 +42,8 @@ const Price = styled.p.attrs({
 const ProductImage = styled.img.attrs({
   className: 'image',
 })`
-  width: 400px;
-  height: 400px;
+  max-width: 400px;
+  max-height: 400px;
   height: auto;
   border-radius: 4px;
 `
@@ -84,11 +86,23 @@ const DescriptionText = styled.p.attrs({
 `
 
 function App() {
+    const fieldId = useFieldId()
+    // Preload products & images once per session for this field
+    const { ready } = useProductPreloader(fieldId)
     const {product} = useSocket()
     const {name, price, discountPrice, memberPrice, description, image} = product ?? {}
     console.log({product})
 
     const visible: boolean = !!product
+
+  if (!ready) {
+    return (
+      <AppContainer>
+        <Title>Commercials Feed</Title>
+        <p>Loading product catalog…</p>
+      </AppContainer>
+    )
+  }
 
   return (
     <AppContainer>

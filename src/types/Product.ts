@@ -6,7 +6,8 @@ interface Product {
     discountPrice: number
     memberPrice: number
     description: string
-    image: string
+    image: string // Used in the test routes
+    imageFileName?: string // Used in the production routes
   }
 
 export default Product
