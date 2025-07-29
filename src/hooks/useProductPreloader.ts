@@ -39,7 +39,6 @@ export default function useProductPreloader(fieldId?: string) {
 
         // Pre-cache images (fire and forget – we still resolve once all settled)
         const cache = await caches.open('product-images')
-        console.log("products map", products)
         await Promise.allSettled(
           products.map(p =>
             cache.add(

@@ -52,7 +52,7 @@ interface ProductItemProps {
   visible: boolean
 }
 
-const ProductItem = styled.li.attrs({className: "ProductItem"})<ProductItemProps>`
+const ProductItem = styled.li.attrs({ className: "ProductItem" })<ProductItemProps>`
   background: rgba(255, 255, 255, 0.3);
   margin-bottom: 0.75rem;
   padding: 3rem;
@@ -89,9 +89,9 @@ function App() {
     const fieldId = useFieldId()
     // Preload products & images once per session for this field
     const { ready } = useProductPreloader(fieldId)
-    const {product} = useSocket()
-    const {name, price, discountPrice, memberPrice, description, image} = product ?? {}
-    console.log({product})
+    const { product } = useSocket()
+    const { name, price, discountPrice, memberPrice, description, image } = product ?? {}
+    console.log({ product })  /* eslint-disable-line */
 
     const visible: boolean = !!product
 
