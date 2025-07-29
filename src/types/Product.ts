@@ -1,6 +1,7 @@
-export type Commercial = {
-    id: string
+interface Product {
+    id: number
     name: string
+    label: string
     price: number
     discountPrice: number
     memberPrice: number
@@ -8,3 +9,4 @@ export type Commercial = {
     image: string
   }
 
+export default Product

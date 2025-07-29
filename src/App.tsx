@@ -7,6 +7,7 @@ const AppContainer = styled.main.attrs({
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
   padding: 2rem;
   margin: 0 auto;
   font-family: sans-serif;
@@ -23,23 +24,24 @@ const Title = styled.h1.attrs({
 
 interface PriceProps {
   strikethrough?: boolean
-  membersDiscount?: boolean
+  membersdiscount?: boolean
 }
 
 const Price = styled.p.attrs({
   className: 'price',
 })<PriceProps>`
-  font-weight: ${({ membersDiscount }: PriceProps) => (membersDiscount ? 'bold' : 'normal')};
-  color: ${({ strikethrough, membersDiscount }: PriceProps) => (strikethrough ? '#ff000a' : membersDiscount ? '#3bd100' :  'white')};
+  font-weight: ${({ membersdiscount }: PriceProps) => (membersdiscount ? 'bold' : 'normal')};
+  color: ${({ strikethrough, membersdiscount }: PriceProps) => (strikethrough ? '#ff000a' : membersdiscount ? '#3bd100' :  'white')};
   margin:  0;
   ${({ strikethrough }: PriceProps) => strikethrough && 'text-decoration: line-through;'}
-  font-size: ${({ membersDiscount }: PriceProps) => (membersDiscount ? '22px' : '18px')};
+  font-size: ${({ membersdiscount }: PriceProps) => (membersdiscount ? '22px' : '18px')};
 `
 
 const ProductImage = styled.img.attrs({
   className: 'image',
 })`
-  max-width: 400px;
+  width: 400px;
+  height: 400px;
   height: auto;
   border-radius: 4px;
 `
@@ -51,7 +53,7 @@ interface ProductItemProps {
 const ProductItem = styled.li.attrs({className: "ProductItem"})<ProductItemProps>`
   background: rgba(255, 255, 255, 0.3);
   margin-bottom: 0.75rem;
-  padding: 1.5rem;
+  padding: 3rem;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -63,10 +65,12 @@ const ProductItem = styled.li.attrs({className: "ProductItem"})<ProductItemProps
   height: 800px;
 
   strong {
-    font-size: 3rem;
+    font-size: 3.5rem;
     text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
     text-transform: capitalize;
-    margin-bottom: 1rem;
+    margin: 0 auto 1rem;
+    text-align: center;
+    height: 250px !important;
   }
 `
 
@@ -80,21 +84,24 @@ const DescriptionText = styled.p.attrs({
 `
 
 function App() {
-    const {commercial} = useSocket()
-    const {name, price, discountPrice, memberPrice, description, image} = commercial ?? {}
+    const {product} = useSocket()
+    const {name, price, discountPrice, memberPrice, description, image} = product ?? {}
+    console.log({product})
+
+    const visible: boolean = !!product
 
   return (
     <AppContainer>
       <Title>Commercials Feed</Title>
-      {!commercial && <p>No commercials received yet.</p>}
-        {/* {commercial && ( */}
-      <ProductItem visible={!!commercial} >
-          <strong>{name}</strong>
-          { !!commercial && 
+      {!visible && <p>No commercials received yet.</p>}
+      <ProductItem visible={visible} 
+      >
+          {visible && 
           <>
+          <strong>{name}</strong>
           <Price strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
           <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
-          <Price membersDiscount>Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}</Price>
+          <Price membersdiscount>Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}</Price>
           </>
           }
           <DescriptionText>{description}</DescriptionText>
