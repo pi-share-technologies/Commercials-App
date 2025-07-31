@@ -1,70 +1,66 @@
-import { useEffect, useState } from 'react'
-import Product from 'types/Product'
+import { useEffect, useState } from "react";
+import Product from "types/Product";
 
 /**
  * Hook that runs once on application start-up.
  * It fetches the product catalogue (metadata + image URLs) from /products/index.json,
- * stores the metadata locally (localStorage for now) and pre-caches the images
- * using the browser Cache Storage API. A simple version key triggers refreshes
- * whenever the backend bumps the catalogue version.
+ * stores the metadata in a local state and pre-caches the images
+ * using the browser Cache Storage API.
  */
-export default function useProductPreloader(fieldId?: string) {
-  const [ready, setReady] = useState(false)
+export default function useProductPreloader(
+  resetFieldId: () => void,
+  fieldId?: string
+) {
+  const [loadedProducts, setLoadedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     if (!fieldId) return;
-    let cancelled = false
 
     const preload = async () => {
       try {
-        // const VERSION_KEY = `productsVersion:${fieldId}`
-        const PRODUCTS_KEY = `products:${fieldId}`
-        const backendUrl = import.meta.env.VITE_BACKEND_URL
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        const fetchUrl = `${backendUrl}/commercials/fields?fieldName=${encodeURIComponent(
+          fieldId
+        )}`;
 
         // Fetch latest catalogue for this device
-        const res = await fetch(`${backendUrl}/commercials/fields?fieldName=${encodeURIComponent(fieldId)}`, { cache: 'no-cache' })
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
+        const res = await fetch(fetchUrl, { cache: "no-cache" });
+        if (!res.ok) {
+          // if the server is live and couldn't find the field's products, prompt the user again
+          if (res.status === 400 || res.status === 404) {
+            resetFieldId();
+          }
+          throw new Error(`Fetch failed: ${res.status}`);
+        }
 
-        const { products }: { version: string; products: Product[] } =
-          await res.json()
-
-        // If we already have this version cached – nothing to do.
-        // if (localStorage.getItem(VERSION_KEY) === version) {
-        //   setReady(true)
-        //   return
-        // }
-
-        // Persist catalogue metadata
-        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products))
+        const { products }: { products: Product[] } = await res.json();
+        if (products) {
+          setLoadedProducts(() => products);
+        }
 
         // Pre-cache images (fire and forget – we still resolve once all settled)
-        const cache = await caches.open('product-images')
+        const cache = await caches.open("product-images");
         await Promise.allSettled(
-          products.map(p =>
-            cache.add(
-              new Request(
-                'https://storage.googleapis.com/whats-on-product-images/' + p.imageFileName,
-                { mode: 'no-cors' }
-              )
-            )
-          )
-        )
-
-        // localStorage.setItem(VERSION_KEY, version)
-        if (!cancelled) setReady(true)
+          products.map(async (p) => {
+            const productImageUrl =
+              "https://storage.googleapis.com/whats-on-product-images/" +
+              p.imageFileName +
+              "?alt=media";
+            const res = await fetch(productImageUrl);
+            if (res.ok) {
+              await cache.put(productImageUrl, res.clone());
+            }
+          })
+        );
       } catch (err) {
-        console.error('Product preload failed', err)
-        // Even on failure we mark ready to avoid blocking the UI forever.
-        if (!cancelled) setReady(true)
+        console.error("Product preload failed", err);
       }
-    }
+    };
 
-    preload()
+    preload();
 
-    return () => {
-      cancelled = true
-    }
-  }, [fieldId])
+    return () => {};
+  }, [fieldId]);
 
-  return { ready }
+  return { loadedProducts };
 }
