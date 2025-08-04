@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Product from "types/Product";
+import Product from "../types/Product";
 
 /**
  * Hook that runs once on application start-up.
@@ -19,7 +19,7 @@ export default function useProductPreloader(
     const preload = async () => {
       try {
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        const fetchUrl = `${backendUrl}/commercials/fields?fieldName=${encodeURIComponent(
+        const fetchUrl = `${backendUrl}/commercials/fieldProducts?fieldName=${encodeURIComponent(
           fieldId
         )}`;
 
@@ -60,7 +60,7 @@ export default function useProductPreloader(
     preload();
 
     return () => {};
-  }, [fieldId]);
+  }, [fieldId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { loadedProducts };
 }

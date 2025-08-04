@@ -15,7 +15,7 @@ import useFieldId from "./useFieldId";
  */
 
 const useSocket = (loadedProducts: Product[]) => {
-  const fieldId = useFieldId();
+  const { fieldId } = useFieldId();
   const [product, setProduct] = useState<Product | null>(null);
   // ObjectURL for cached image to revoke when done
   const objectUrlRef = useRef<string | null>(null);
@@ -30,6 +30,7 @@ const useSocket = (loadedProducts: Product[]) => {
 
   useEffect(() => {
     if (socketRef.current) return;
+    if (!fieldId) return;
     const backendUrl: string = import.meta.env.VITE_SOCKET_URL ?? "";
     const socket: Socket = io(backendUrl, { transports: ["websocket"] });
     socketRef.current = socket;
@@ -46,7 +47,7 @@ const useSocket = (loadedProducts: Product[]) => {
       setProduct(data);
       timeoutRef.current = window.setTimeout(() => {
         setProduct(null);
-      }, 2000);
+      }, 3000);
     });
 
     //* Receives a product id from the backend and returns the product object
@@ -60,70 +61,74 @@ const useSocket = (loadedProducts: Product[]) => {
       }
       timeoutRef.current = window.setTimeout(() => {
         setProduct(null);
-      }, 2000);
+      }, 3000);
     });
 
     //* Receives a product label from the backend and returns the product object (or the first product if not found)
-    // socket.on(`productLabel/${fieldId}}`, (productLabel: string) => {
-    socket.on("productLabel", async (productLabel: string) => {
-      console.log(`Label received from kafka: ${productLabel}`); /* eslint-disable-line */
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      const currentProducts = loadedProductsRef.current;
-      const product = currentProducts.find(
-        (product) => product.barcode === productLabel
-      );
-      console.warn({ foundProduct: product ?? "not in the list" });
-
-      if (product && product?.imageFileId) {
-        const productImageId = product.imageFileId
-          .split("/")
-          .slice(0, -1)
-          .join("/");
-        const fullUrl =
-          "https://storage.googleapis.com/" + productImageId + "?alt=media";
-
-        try {
-          const cache = await caches.open("product-images");
-
-          const cachedResponse = await cache.match(fullUrl);
-          if (!cachedResponse) {
-            setProduct(product); // Fallback to value already in product.image
-            return;
-          }
-
-          const blob = await cachedResponse.blob();
-
-          if (blob.size === 0) {
-            console.error("Image blob is empty!");
-            setProduct(product); // Fallback to original product
-            return;
-          }
-
-          // Create ObjectURL for the blob so <img> can render it
-          const objectUrl = URL.createObjectURL(blob);
-
-          // Clean up any previous object URL
-          if (objectUrlRef.current) {
-            URL.revokeObjectURL(objectUrlRef.current);
-          }
-          objectUrlRef.current = objectUrl;
-          setProduct({ ...product, image: objectUrl });
-        } catch (error) {
-          console.error("Cache access error:", error);
-          setProduct(product); // Fallback to original product
+    const fieldNameWithoutSpaces = String(fieldId)?.replaceAll(" ", "");
+    socket.on(
+      `productLabel/${fieldNameWithoutSpaces}`,
+      async (productLabel: string) => {
+        /* eslint-disable-next-line */
+        console.log(`Label received from kafka: ${productLabel}`);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
         }
+        const currentProducts = loadedProductsRef.current;
+        const product = currentProducts.find(
+          (product) => product.barcode === productLabel
+        );
+        console.warn({ foundProduct: product ?? "not in the list" });
 
-        timeoutRef.current = window.setTimeout(() => {
-          if (objectUrlRef.current) {
-            URL.revokeObjectURL(objectUrlRef.current);
-            objectUrlRef.current = null;
+        if (product && product?.imageFileId) {
+          const productImageId = product.imageFileId
+            .split("/")
+            .slice(0, -1)
+            .join("/");
+          const fullUrl =
+            "https://storage.googleapis.com/" + productImageId + "?alt=media";
+
+          try {
+            const cache = await caches.open("product-images");
+
+            const cachedResponse = await cache.match(fullUrl);
+            if (!cachedResponse) {
+              setProduct(product); // Fallback to value already in product.image
+              return;
+            }
+
+            const blob = await cachedResponse.blob();
+
+            if (blob.size === 0) {
+              console.error("Image blob is empty!");
+              setProduct(product); // Fallback to original product
+              return;
+            }
+
+            // Create ObjectURL for the blob so <img> can render it
+            const objectUrl = URL.createObjectURL(blob);
+
+            // Clean up any previous object URL
+            if (objectUrlRef.current) {
+              URL.revokeObjectURL(objectUrlRef.current);
+            }
+            objectUrlRef.current = objectUrl;
+            setProduct({ ...product, image: objectUrl });
+          } catch (error) {
+            console.error("Cache access error:", error);
+            setProduct(product); // Fallback to original product
           }
-          setProduct(null);
-        }, 2000);
+
+          timeoutRef.current = window.setTimeout(() => {
+            if (objectUrlRef.current) {
+              URL.revokeObjectURL(objectUrlRef.current);
+              objectUrlRef.current = null;
+            }
+            setProduct(null);
+          }, 3000);
+        }
       }
-    });
+    );
 
     return () => {
       if (socket.connected) socket.disconnect();
