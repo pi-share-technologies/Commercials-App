@@ -17,6 +17,12 @@ export default function useProductPreloader(
     if (!fieldId) return;
 
     const preload = async () => {
+      // Load the memorized products before checking the backend for the latest products
+      const productsFromLocalStorage = localStorage.getItem("products");
+      if (productsFromLocalStorage) {
+        setLoadedProducts(() => JSON.parse(productsFromLocalStorage));
+      }
+
       try {
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
         const fetchUrl = `${backendUrl}/commercials/fieldProducts?fieldName=${encodeURIComponent(
@@ -36,22 +42,8 @@ export default function useProductPreloader(
         const { products }: { products: Product[] } = await res.json();
         if (products) {
           setLoadedProducts(() => products);
+          localStorage.setItem("products", JSON.stringify(products));
         }
-
-        // Pre-cache images (fire and forget – we still resolve once all settled)
-        const cache = await caches.open("product-images");
-        await Promise.allSettled(
-          products.map(async (p) => {
-            const productImageUrl =
-              "https://storage.googleapis.com/whats-on-product-images/" +
-              p.imageFileName +
-              "?alt=media";
-            const res = await fetch(productImageUrl);
-            if (res.ok) {
-              await cache.put(productImageUrl, res.clone());
-            }
-          })
-        );
       } catch (err) {
         console.error("Product preload failed", err);
       }

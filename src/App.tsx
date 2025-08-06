@@ -97,8 +97,8 @@ function App() {
   const { fieldId, resetFieldId } = useFieldId();
   // Preload products & images once per session for this field
   const { loadedProducts } = useProductPreloader(resetFieldId, fieldId);
-  const { product } = useSocket(loadedProducts); //? Temp products for testing
-  const { name, price, description, image } = product ?? {};
+  const { product } = useSocket(loadedProducts);
+  const { name, price, description, imageBase64 } = product ?? {};
 
   const discountPrice = price ? price * 0.9 : 0;
   const memberPrice = price ? price * 0.8 : 0;
@@ -134,7 +134,7 @@ function App() {
           </>
         )}
         <DescriptionText>{description}</DescriptionText>
-        <ProductImage src={image} alt={name} />
+        <ProductImage src={imageBase64} alt={name} />
       </ProductItem>
     </AppContainer>
   );
