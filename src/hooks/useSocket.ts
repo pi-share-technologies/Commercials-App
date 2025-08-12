@@ -73,9 +73,22 @@ const useSocket = (loadedProducts: Product[]) => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
-        const product = loadedProductsRef.current.find(
-          (product) => product.barcode === productLabel
-        );
+        //! should return
+        //? const product = loadedProductsRef.current.find(
+        //?   (product) => product.barcode === productLabel
+        //? );
+
+        /* TEMP FOR TESTING ONLY */
+        console.log({fieldId}) /* eslint-disable-line */
+        const demoProductByFieldName: { [key: string]: string } = {
+          "Field#6": "7290112495433",
+          "Field #7": "7290005430602"
+          }
+          const product = loadedProductsRef.current.find(
+            (product) => product.barcode === demoProductByFieldName[fieldId]
+            );
+            /* TEMP FOR TESTING ONLY */
+            
         console.warn({ foundProduct: product ?? "not in the list" });
         if (!product) return;
         setProduct(() => product);
