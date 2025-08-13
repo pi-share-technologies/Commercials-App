@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import styled from "styled-components";
-import useSocket from "./hooks/useSocket";
-import useProductPreloader from "./hooks/useProductPreloader";
-import useFieldId from "./hooks/useFieldId";
+import useSocket from "@hooks/useSocket";
+import useProductPreloader from "@hooks/useProductPreloader";
+import useFieldId from "@hooks/useFieldId";
 
 const AppContainer = styled.main.attrs({
   className: "container",
@@ -89,8 +89,10 @@ const DescriptionText = styled.p.attrs({
 })`
   margin: 1.5rem 0;
   text-align: center;
-  text-wrap: balance;
   height: 10rem;
+  @supports (text-wrap: balance) {
+    text-wrap: balance;
+  }
 `;
 
 function App() {

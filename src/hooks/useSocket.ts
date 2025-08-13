@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
-import Product from "../types/Product";
+import Product from "@interfaces/Product";
 
 /**
  * Hook to manage the socket.io connection.
@@ -40,9 +40,9 @@ const useSocket = (loadedProducts: Product[], fieldId?: string) => {
         clearTimeout(timeoutRef.current);
       }
       setProduct(data);
-      timeoutRef.current = window.setTimeout(() => {
-        setProduct(null);
-      }, 3000);
+      // timeoutRef.current = window.setTimeout(() => {
+      //   setProduct(null);
+      // }, 3000);
     });
 
     //* Receives a product id from the backend and returns the product object
@@ -56,9 +56,9 @@ const useSocket = (loadedProducts: Product[], fieldId?: string) => {
       if (product) {
         setProduct(product);
       }
-      timeoutRef.current = window.setTimeout(() => {
-        setProduct(null);
-      }, 3000);
+      // timeoutRef.current = window.setTimeout(() => {
+      //   setProduct(null);
+      // }, 3000);
     });
 
     //* Receives a product label from the backend and returns the product object

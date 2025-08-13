@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Product from "../types/Product";
+import Product from "@interfaces/Product";
 
 /**
  * Hook that runs once on application start-up.
