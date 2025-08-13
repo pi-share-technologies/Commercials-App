@@ -94,10 +94,10 @@ const DescriptionText = styled.p.attrs({
 `;
 
 function App() {
-  const { fieldId, resetFieldId } = useFieldId();
+  const { fieldName, fieldId, resetFieldName, updateFieldId } = useFieldId();
   // Preload products & images once per session for this field
-  const { loadedProducts } = useProductPreloader(resetFieldId, fieldId);
-  const { product } = useSocket(loadedProducts);
+  const { loadedProducts } = useProductPreloader(resetFieldName, updateFieldId, fieldName);
+  const { product } = useSocket(loadedProducts, fieldId);
   const { name, price, description, imageBase64 } = product ?? {};
 
   const discountPrice = price ? price * 0.9 : 0;

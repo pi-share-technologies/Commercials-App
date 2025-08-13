@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import Product from "../types/Product";
-import useFieldId from "./useFieldId";
 
 /**
  * Hook to manage the socket.io connection.
@@ -13,8 +12,7 @@ import useFieldId from "./useFieldId";
  * - closing the socket connection on unmount
  */
 
-const useSocket = (loadedProducts: Product[]) => {
-  const { fieldId } = useFieldId();
+const useSocket = (loadedProducts: Product[], fieldId?: string) => {
   const [product, setProduct] = useState<Product | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -64,32 +62,25 @@ const useSocket = (loadedProducts: Product[]) => {
     });
 
     //* Receives a product label from the backend and returns the product object
-    const fieldNameWithoutSpaces = String(fieldId)?.replaceAll(" ", "");
     socket.on(
-      `productLabel/${fieldNameWithoutSpaces}`,
+      `productLabel/${fieldId}`,
       async (productLabel: string) => {
         /* eslint-disable-next-line */
         console.log(`Label received from kafka: ${productLabel}`);
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
-        //! should return
-        //? const product = loadedProductsRef.current.find(
-        //?   (product) => product.barcode === productLabel
-        //? );
+
+        // the product label contains both the BARCODE and the INTERNAL ID number, separated by an underscore
+        const productBarcode = productLabel.split("_")[0];
+        const product = loadedProductsRef.current.find(
+          (product) => product.barcode === productBarcode
+        );
 
         /* TEMP FOR TESTING ONLY */
         console.log({fieldId}) /* eslint-disable-line */
-        const demoProductByFieldName: { [key: string]: string } = {
-          "Field#6": "7290112495433",
-          "Field #7": "7290005430602"
-          }
-          const product = loadedProductsRef.current.find(
-            (product) => product.barcode === demoProductByFieldName[fieldId]
-            );
-            /* TEMP FOR TESTING ONLY */
-            
         console.warn({ foundProduct: product ?? "not in the list" });
+
         if (!product) return;
         setProduct(() => product);
 

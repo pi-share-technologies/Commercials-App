@@ -9,12 +9,13 @@ import Product from "../types/Product";
  */
 export default function useProductPreloader(
   resetFieldId: () => void,
-  fieldId?: string
+  updateFieldId: (id: string) => void,
+  fieldName?: string
 ) {
   const [loadedProducts, setLoadedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (!fieldId) return;
+    if (!fieldName) return;
 
     const preload = async () => {
       // Load the memorized products before checking the backend for the latest products
@@ -25,8 +26,8 @@ export default function useProductPreloader(
 
       try {
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        const fetchUrl = `${backendUrl}/commercials/fieldProducts?fieldName=${encodeURIComponent(
-          fieldId
+        const fetchUrl = `${backendUrl}/commercials/productsByFieldName?fieldName=${encodeURIComponent(
+          fieldName
         )}`;
 
         // Fetch latest catalogue for this device
@@ -39,10 +40,14 @@ export default function useProductPreloader(
           throw new Error(`Fetch failed: ${res.status}`);
         }
 
-        const { products }: { products: Product[] } = await res.json();
+        const { products, fieldId }: { products: Product[], fieldId: string } = await res.json();
         if (products) {
           setLoadedProducts(() => products);
           localStorage.setItem("products", JSON.stringify(products));
+        }
+        if (fieldId) {
+          localStorage.setItem("fieldId", fieldId);
+          updateFieldId(fieldId);
         }
       } catch (err) {
         console.error("Product preload failed", err);
@@ -52,7 +57,7 @@ export default function useProductPreloader(
     preload();
 
     return () => {};
-  }, [fieldId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fieldName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { loadedProducts };
 }

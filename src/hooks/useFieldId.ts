@@ -8,38 +8,45 @@ import { useEffect, useState } from "react";
  *   3. Prompt the operator once
  */
 export default function useFieldId() {
+  const [fieldName, setFieldName] = useState<string | undefined>(undefined);
   const [fieldId, setFieldId] = useState<string | undefined>(undefined);
 
-  const getFieldIdInput = (promptText: string = "Enter field name") => {
+  const getFieldNameInput = (promptText: string = "Enter field name") => {
     const input = window.prompt(promptText)?.trim();
     if (input) {
       localStorage.setItem("fieldName", input);
-      setFieldId(input);
+      setFieldName(input);
     }
   };
 
   useEffect(() => {
     const envId = import.meta.env.VITE_FIELD_ID as string | undefined;
     if (envId) {
-      setFieldId(envId);
+      setFieldName(envId);
       return;
     }
 
     const cached = localStorage.getItem("fieldName");
     if (cached) {
-      setFieldId(cached);
+      setFieldName(cached);
       return;
     }
 
-    getFieldIdInput();
+    getFieldNameInput();
   }, []);
 
   // a reset function to prompt the user again in case the server
-  const resetFieldId = () => {
+  const resetFieldName = () => {
     localStorage.removeItem("fieldName");
-    setFieldId(undefined);
-    getFieldIdInput("Field name does not exist. Please try again");
+    setFieldName(undefined);
+    getFieldNameInput("Field name does not exist. Please try again");
   };
 
-  return { fieldId, resetFieldId } as const;
+  const updateFieldId = (id: string) => {
+    if (!id) return;
+    setFieldId(() => id);
+  };
+
+
+  return { fieldName, fieldId, resetFieldName, updateFieldId } as const;
 }
