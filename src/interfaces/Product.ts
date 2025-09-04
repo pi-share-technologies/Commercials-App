@@ -1,5 +1,5 @@
-interface Product {
-  id: number;
+export default interface Product {
+  _id: string;
   name: string;
   barcode: string;
   price: number;
@@ -8,5 +8,3 @@ interface Product {
   description: string;
   imageBase64: string;
 }
-
-export default Product;

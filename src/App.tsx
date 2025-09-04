@@ -57,7 +57,7 @@ interface ProductItemProps {
   $visible: boolean;
 }
 
-const ProductItem = styled.li.attrs({
+const ProductItem = styled.div.attrs({
   className: "ProductItem",
 })<ProductItemProps>`
   background: rgba(255, 255, 255, 0.3);
@@ -95,12 +95,16 @@ const DescriptionText = styled.p.attrs({
   }
 `;
 
-function App() {
+export default function App() {
   const { fieldName, fieldId, resetFieldName, updateFieldId } = useFieldId();
   // Preload products & images once per session for this field
-  const { loadedProducts } = useProductPreloader(resetFieldName, updateFieldId, fieldName);
-  const { product } = useSocket(loadedProducts, fieldId);
-  const { name, price, description, imageBase64 } = product ?? {};
+  const { loadedProducts } = useProductPreloader(
+    resetFieldName,
+    updateFieldId,
+    fieldName
+  );
+  const { activeProduct } = useSocket(loadedProducts, fieldId);
+  const { name, price, description, imageBase64 } = activeProduct ?? {};
 
   const discountPrice = price ? price * 0.9 : 0;
   const memberPrice = price ? price * 0.8 : 0;
@@ -109,7 +113,7 @@ function App() {
     console.log({ loadedProducts }); /* eslint-disable-line */
   }, [loadedProducts]);
 
-  const visible: boolean = !!product;
+  const visible: boolean = !!activeProduct;
 
   if (!loadedProducts.length) {
     return (
@@ -141,5 +145,3 @@ function App() {
     </AppContainer>
   );
 }
-
-export default App;

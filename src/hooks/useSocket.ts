@@ -8,13 +8,11 @@ import Product from "@interfaces/Product";
  * - connecting to the backend using socket.io
  * - receiving products from the backend
  * - storing the products locally
- * - setting a timer to clear the product from local state after 2 seconds
  * - closing the socket connection on unmount
  */
 
-const useSocket = (loadedProducts: Product[], fieldId?: string) => {
-  const [product, setProduct] = useState<Product | null>(null);
-  const timeoutRef = useRef<number | null>(null);
+export default function useSocket(loadedProducts: Product[], fieldId?: string) {
+  const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const loadedProductsRef = useRef(loadedProducts);
 
@@ -33,70 +31,63 @@ const useSocket = (loadedProducts: Product[], fieldId?: string) => {
       console.info("Socket connected", socket.id); /* eslint-disable-line */
     });
 
-    //* Receives a product object from the backend
-    socket.on("commercial", (data: Product) => {
-      // reset inactivity timer
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      setProduct(data);
-      // timeoutRef.current = window.setTimeout(() => {
-      //   setProduct(null);
-      // }, 3000);
-    });
+    /**
+     * @SocketChannel - productLabel/{fieldId}
+     * @param productLabel - String containing barcode and internal ID separated by underscore
+     * @description Receives a product label from the backend containing barcode and internal ID.
+     * The label format is: "{BARCODE}_{INTERNAL_ID}"
+     * Finds the matching product from loaded products and sets it as active.
+     */
+    socket.on(`productLabel/${fieldId}`, (productLabel: string) => {
+      if (!productLabel) return console.error("No product label received");
+      /* eslint-disable-next-line */
+      console.log(`Label received from kafka: ${productLabel}`);
 
-    //* Receives a product id from the backend and returns the product object
-    socket.on("productId", (productId: number) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      // the product label contains both the BARCODE and the INTERNAL ID number, separated by an underscore
+      const productBarcode = productLabel.split("_")[0];
       const product = loadedProductsRef.current.find(
-        (product) => product.id === productId
+        (product) => product.barcode === productBarcode
       );
-      if (product) {
-        setProduct(product);
-      }
-      // timeoutRef.current = window.setTimeout(() => {
-      //   setProduct(null);
-      // }, 3000);
+      /* eslint-disable-next-line */
+      console.log({ foundProduct: product ?? "not in the list" });
+      if (!product) return;
+      setActiveProduct(product);
     });
 
-    //* Receives a product label from the backend and returns the product object
-    socket.on(
-      `productLabel/${fieldId}`,
-      async (productLabel: string) => {
-        /* eslint-disable-next-line */
-        console.log(`Label received from kafka: ${productLabel}`);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
+    /**
+     * @SocketChannel - updateRealogram/{fieldId}
+     * @param {Product[]} newRealogram - The latest realogram products list
+     * @description Receives the latest realogram products list from the backend to update the local products list.
+     * Prevents duplicate products by checking if the product ID already exists.
+     * Updates both the in-memory loaded products and localStorage.
+     */
+    socket.on(`updateRealogram/${fieldId}`, (newRealogram: Product[]) => {
+      if (!newRealogram || !newRealogram.length) return;
 
-        // the product label contains both the BARCODE and the INTERNAL ID number, separated by an underscore
-        const productBarcode = productLabel.split("_")[0];
-        const product = loadedProductsRef.current.find(
-          (product) => product.barcode === productBarcode
-        );
+      // Create a Map of existing products for O(1) lookup by _id
+      const existingProductsMap = new Map<string, Product>();
+      loadedProductsRef.current.forEach(product => {
+        existingProductsMap.set(product.barcode, product);
+      });
 
-        /* TEMP FOR TESTING ONLY */
-        console.log({fieldId}) /* eslint-disable-line */
-        console.warn({ foundProduct: product ?? "not in the list" });
-
-        if (!product) return;
-        setProduct(() => product);
-
-        timeoutRef.current = window.setTimeout(() => {
-          setProduct(null);
-        }, 3000);
+      // Filter new products that don't exist in current list - O(n) operation
+      const newProducts = newRealogram.filter(product => 
+        !existingProductsMap.has(product.barcode)
+      );
+      
+      // Only update if there are new products to add
+      if (newProducts.length > 0) {
+        console.log({newProducts}) // eslint-disable-line
+        const updatedRealogram = [...loadedProductsRef.current, ...newProducts];
+        loadedProductsRef.current = updatedRealogram;
+        localStorage.setItem("products", JSON.stringify(loadedProductsRef.current));
       }
-    );
+    });
 
     return () => {
       if (socket.connected) socket.disconnect();
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [fieldId]);
 
-  return { product };
-};
-
-export default useSocket;
+  return { activeProduct };
+}

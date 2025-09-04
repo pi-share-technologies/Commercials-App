@@ -20,12 +20,18 @@ export default function useProductPreloader(
     const preload = async () => {
       // Load the memorized products before checking the backend for the latest products
       const productsFromLocalStorage = localStorage.getItem("products");
-      if (productsFromLocalStorage) {
+      if (productsFromLocalStorage && productsFromLocalStorage.length) {
         setLoadedProducts(() => JSON.parse(productsFromLocalStorage));
+        return;
       }
 
       try {
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        if (!backendUrl) {
+          console.error("Backend URL not found");
+          return;
+        }
+
         const fetchUrl = `${backendUrl}/commercials/productsByFieldName?fieldName=${encodeURIComponent(
           fieldName
         )}`;
