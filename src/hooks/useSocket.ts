@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import Product from "@interfaces/Product";
+import calculateRealogramsDiff from "@utils/realogramsDiff";
 
 /**
  * Hook to manage the socket.io connection.
@@ -33,7 +34,7 @@ export default function useSocket(loadedProducts: Product[], fieldId?: string) {
 
     /**
      * @SocketChannel - productLabel/{fieldId}
-     * @param productLabel - String containing barcode and internal ID separated by underscore
+     * @param {string} productLabel - String containing barcode and internal ID separated by underscore
      * @description Receives a product label from the backend containing barcode and internal ID.
      * The label format is: "{BARCODE}_{INTERNAL_ID}"
      * Finds the matching product from loaded products and sets it as active.
@@ -63,24 +64,11 @@ export default function useSocket(loadedProducts: Product[], fieldId?: string) {
      */
     socket.on(`updateRealogram/${fieldId}`, (newRealogram: Product[]) => {
       if (!newRealogram || !newRealogram.length) return;
-
-      // Create a Map of existing products for O(1) lookup by _id
-      const existingProductsMap = new Map<string, Product>();
-      loadedProductsRef.current.forEach(product => {
-        existingProductsMap.set(product.barcode, product);
-      });
-
-      // Filter new products that don't exist in current list - O(n) operation
-      const newProducts = newRealogram.filter(product => 
-        !existingProductsMap.has(product.barcode)
-      );
-      
-      // Only update if there are new products to add
+      const { newProducts } = calculateRealogramsDiff({ oldRealogram: loadedProductsRef.current, newRealogram });
       if (newProducts.length > 0) {
-        console.log({newProducts}) // eslint-disable-line
-        const updatedRealogram = [...loadedProductsRef.current, ...newProducts];
-        loadedProductsRef.current = updatedRealogram;
+        loadedProductsRef.current = [...loadedProductsRef.current, ...newProducts];
         localStorage.setItem("products", JSON.stringify(loadedProductsRef.current));
+        console.warn("New products added:\n", {newProducts}) // eslint-disable-line
       }
     });
 

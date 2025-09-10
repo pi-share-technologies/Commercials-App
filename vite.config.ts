@@ -12,6 +12,7 @@ export default defineConfig({
     alias: {
       '@interfaces': resolve(__dirname, './src/interfaces'),
       '@hooks': resolve(__dirname, './src/hooks'),
+      '@utils': resolve(__dirname, './src/utils'),
     },
   },
 })

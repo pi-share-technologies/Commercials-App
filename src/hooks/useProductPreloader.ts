@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Product from "@interfaces/Product";
+import calculateRealogramsDiff from "@utils/realogramsDiff";
 
 /**
  * Hook that runs once on application start-up.
@@ -18,11 +19,15 @@ export default function useProductPreloader(
     if (!fieldName) return;
 
     const preload = async () => {
-      // Load the memorized products before checking the backend for the latest products
-      const productsFromLocalStorage = localStorage.getItem("products");
-      if (productsFromLocalStorage && productsFromLocalStorage.length) {
-        setLoadedProducts(() => JSON.parse(productsFromLocalStorage));
-        return;
+      // Load the memorized products and FieldId before checking the backend for the latest products
+      const memorizedProducts = localStorage.getItem("products");
+      if (memorizedProducts && memorizedProducts.length) {
+        setLoadedProducts(() => JSON.parse(memorizedProducts));
+
+        const fieldIdFromLocalStorage = localStorage.getItem("fieldId");
+        if (fieldIdFromLocalStorage) {
+          updateFieldId(fieldIdFromLocalStorage);
+        }
       }
 
       try {
@@ -46,11 +51,36 @@ export default function useProductPreloader(
           throw new Error(`Fetch failed: ${res.status}`);
         }
 
-        const { products, fieldId }: { products: Product[], fieldId: string } = await res.json();
-        if (products) {
-          setLoadedProducts(() => products);
-          localStorage.setItem("products", JSON.stringify(products));
+        const {
+          products: fetchedProducts,
+          fieldId,
+        }: { products: Product[]; fieldId: string } = await res.json();
+
+        const oldRealogram = memorizedProducts
+          ? JSON.parse(memorizedProducts)
+          : [];
+
+        // if there are no products in the latest realogram (after refetching), use the memorized realogram
+        if (
+          (!fetchedProducts || !fetchedProducts.length) &&
+          Array.isArray(oldRealogram)
+        ) {
+          setLoadedProducts(oldRealogram);
+          return;
         }
+
+        const { newProducts } = calculateRealogramsDiff({
+          oldRealogram,
+          newRealogram: fetchedProducts,
+        });
+
+        if (newProducts.length > 0) {
+          setLoadedProducts(() => [...loadedProducts, ...newProducts]);
+          localStorage.setItem("products", JSON.stringify(loadedProducts));
+          /* eslint-disable-next-line */
+          console.log("Products added after refetching:\n", newProducts);
+        }
+
         if (fieldId) {
           localStorage.setItem("fieldId", fieldId);
           updateFieldId(fieldId);
