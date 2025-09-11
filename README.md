@@ -1,69 +1,168 @@
-# React + TypeScript + Vite
+# Commercials App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Real-time product display system that receives product labels via Kafka/Socket.IO and displays commercial information on fields tablets.
 
-Currently, two official plugins are available:
+## Table of Contents
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Development](#development)
+  - [Building for Production](#building-for-production)
+- [Configuration](#configuration)
+- [Architecture](#architecture)
+  - [Data Flow](#data-flow)
+  - [Custom Hooks](#custom-hooks)
+  - [Socket Events](#socket-events)
+- [Deployment](#deployment)
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend Framework**: React 19.1.0
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **Styling**: Styled Components
+- **Real-time Communication**: Socket.IO Client
+- **Linting**: ESLint with TypeScript support
+- **Deployment**: Firebase Hosting (via GitHub Actions)
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Project Structure
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── hooks/
+│   ├── useFieldId.ts          # Field/device identification (env var → localStorage → prompt)
+│   ├── useProductPreloader.ts # Fetches products from backend, manages localStorage cache
+│   └── useSocket.ts           # Socket.IO connection, handles Kafka events
+├── interfaces/
+│   └── Product.ts             # Product interface with pricing tiers
+├── utils/
+│   └── realogramsDiff.ts      # O(n) product list diffing algorithm
+├── App.tsx                    # Main UI component with styled-components
+├── index.css                  # Global styles
+└── main.tsx                   # React entry point
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js (version 18 or higher)
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd Commercials-App
 ```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+### Development
+
+Start the development server:
+```bash
+npm start
+```
+
+The application will be available at `http://localhost:3000`.
+
+### Building for Production
+
+Build the application:
+```bash
+npm run build
+```
+
+Preview the production build:
+```bash
+npm run preview
+```
+
+## Configuration
+
+Environment variables (`.env`):
+
+```bash
+VITE_BACKEND_URL=''    # Backend API for product fetching
+VITE_SOCKET_URL=''     # Socket.IO server for real-time events
+VITE_FIELD_ID=''       # Optional: hardcode field ID (overrides localStorage/prompt)
+```
+
+## Architecture
+
+### Data Flow
+
+1. **Initialization**: `useFieldId` determines field name (env → localStorage → prompt)
+2. **Product Loading**: `useProductPreloader` fetches products from `/commercials/productsByFieldName`
+3. **Socket Connection**: `useSocket` connects to Socket.IO server using fieldId
+4. **Real-time Updates**: Listens for Kafka events via Socket.IO channels
+5. **Product Display**: Shows active product with pricing tiers (regular/discount/member)
+
+### Custom Hooks
+
+#### `useFieldId`
+- Priority: `VITE_FIELD_ID` → localStorage → user prompt
+- Manages field name and fieldId state
+- Provides reset functionality for invalid fields
+
+#### `useProductPreloader`
+- Fetches products by field name from backend
+- Manages localStorage caching with diff algorithm
+- Handles field validation (404/400 → reset field)
+
+#### `useSocket`
+- Connects to Socket.IO with WebSocket transport
+- Listens to two channels:
+  - `productLabel/{fieldId}`: Receives `{BARCODE}_{INTERNAL_ID}` labels
+  - `updateRealogram/{fieldId}`: Receives updated product lists
+- Updates localStorage and active product state
+
+### Socket Events
+
+#### `productLabel/{fieldId}`
+**Payload**: `string` (format: `{BARCODE}_{INTERNAL_ID}`)
+**Action**: Finds product by barcode and sets as active
+
+#### `updateRealogram/{fieldId}`
+**Payload**: `Product[]` (new realogram)
+**Action**: Diffs with current products, adds new ones to localStorage
+
+### Product Interface
+
+```typescript
+interface Product {
+  _id: string;
+  name: string;
+  barcode: string;
+  price: number;
+  discountPrice: number;
+  memberPrice: number;
+  description: string;
+  imageBase64: string;
+}
+```
+
+## Deployment
+
+Automated via GitHub Actions:
+- **PR**: Preview deployments
+- **Master**: Production deployment to Firebase Hosting
+
+Workflows: `.github/workflows/`
+
+### Note
+
+This client app is designed to run on a local device and is not meant to be deployed to a publicly accessible server. The Firebase deployment is for testing purposes only.
