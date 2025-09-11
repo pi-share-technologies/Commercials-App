@@ -67,8 +67,8 @@ export default function useSocket(loadedProducts: Product[], fieldId?: string) {
       const { newProducts } = calculateRealogramsDiff({ oldRealogram: loadedProductsRef.current, newRealogram });
       if (newProducts.length > 0) {
         loadedProductsRef.current = [...loadedProductsRef.current, ...newProducts];
-        localStorage.setItem("products", JSON.stringify(loadedProductsRef.current));
         console.warn("New products added:\n", {newProducts}) // eslint-disable-line
+        localStorage.setItem("products", JSON.stringify(loadedProductsRef.current));
       }
     });
 

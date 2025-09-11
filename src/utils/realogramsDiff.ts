@@ -1,7 +1,7 @@
 import Product from "@interfaces/Product";
 
 /**
- * Helper function to calculate the difference between two realograms (products[]).
+ * Helper function to calculate the difference between two realograms (2 * Product[]).
  * Receives old and new realograms and returns the added and removed products in O(n) time complexity.
  */
 
