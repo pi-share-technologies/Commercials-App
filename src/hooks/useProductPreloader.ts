@@ -75,8 +75,9 @@ export default function useProductPreloader(
         });
 
         if (newProducts.length > 0) {
-          setLoadedProducts(() => [...loadedProducts, ...newProducts]);
-          localStorage.setItem("products", JSON.stringify(loadedProducts));
+          const updatedProducts = [...loadedProducts, ...newProducts];
+          setLoadedProducts(() => updatedProducts);
+          localStorage.setItem("products", JSON.stringify(updatedProducts));
           /* eslint-disable-next-line */
           console.log("Products added after refetching:\n", newProducts);
         }
