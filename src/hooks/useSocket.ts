@@ -64,12 +64,38 @@ export default function useSocket(loadedProducts: Product[], fieldId?: string) {
      */
     socket.on(`updateRealogram/${fieldId}`, (newRealogram: Product[]) => {
       if (!newRealogram || !newRealogram.length) return;
-      const { newProducts } = calculateRealogramsDiff({ oldRealogram: loadedProductsRef.current, newRealogram });
-      if (newProducts.length > 0) {
-        loadedProductsRef.current = [...loadedProductsRef.current, ...newProducts];
-        console.warn("New products added:\n", {newProducts}) // eslint-disable-line
-        localStorage.setItem("products", JSON.stringify(loadedProductsRef.current));
+      const { newProducts } = calculateRealogramsDiff({
+        oldRealogram: loadedProductsRef.current,
+        newRealogram,
+      });
+      if (newProducts.length) {
+        loadedProductsRef.current = [
+          ...loadedProductsRef.current,
+          ...newProducts,
+        ];
+        console.warn("New products added:\n", { newProducts });
+        localStorage.setItem(
+          "products",
+          JSON.stringify(loadedProductsRef.current)
+        );
       }
+    });
+
+    socket.on(`addToRealogram/${fieldId}`, (product: Product) => {
+      if (!product) return;
+
+      const existingProduct = loadedProductsRef.current.find(
+        (p) => p._id === product._id || p.barcode === product.barcode
+      );
+      if (existingProduct)
+        return console.warn(`Product ${product.barcode} already exists`);
+
+      loadedProductsRef.current = [...loadedProductsRef.current, product];
+      console.warn("New product added:\n", { product });
+      localStorage.setItem(
+        "products",
+        JSON.stringify(loadedProductsRef.current)
+      );
     });
 
     return () => {
