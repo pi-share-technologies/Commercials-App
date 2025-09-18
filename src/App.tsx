@@ -113,6 +113,24 @@ export default function App() {
     console.log({ loadedProducts }); /* eslint-disable-line */
   }, [loadedProducts]);
 
+  // Prevent back button from exiting the app on mobile devices
+  useEffect(() => {
+    // Add a dummy entry to the history stack
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      event.preventDefault();
+      // Push the current state back to maintain the app state
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   const visible: boolean = !!activeProduct;
 
   if (!loadedProducts.length) {
