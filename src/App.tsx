@@ -3,6 +3,7 @@ import styled from "styled-components";
 import useSocket from "@hooks/useSocket";
 import useProductPreloader from "@hooks/useProductPreloader";
 import useFieldId from "@hooks/useFieldId";
+import WhatsOnLogo from "./assets/WhatsOnLogo.svg";
 
 const AppContainer = styled.main.attrs({
   className: "container",
@@ -12,17 +13,63 @@ const AppContainer = styled.main.attrs({
   align-items: center;
   gap: 1rem;
   padding: 2rem;
-  margin: 0 auto;
+  margin: 5rem auto 0;
   font-family: sans-serif;
   max-width: 100%;
   overflow-x: hidden;
+`;
+
+interface ProductItemProps {
+  $visible: boolean;
+}
+
+const ProductItem = styled.div.attrs({
+  className: "ProductItem",
+})<ProductItemProps>`
+  position: relative;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 3rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transition: opacity 0.2s ease-in-out;
+  width: 100%;
+  max-width: 600px;
+  height: 800px;
+
+  strong {
+    font-size: 40px;
+    line-height: 1.3;
+    text-shadow: 1px 1px 2px black;
+    text-transform: capitalize;
+    text-align: center;
+    height: 200px !important;
+  }
 `;
 
 const Title = styled.h1.attrs({
   className: "title",
 })`
   margin-bottom: 1rem;
-  font-size: 2rem;
+  font-size: 35px;
+  text-shadow: 1px 1px 2px black;
+`;
+
+const SubTitle = styled.p.attrs({
+  className: "subtitle",
+})`
+  font-size: 20px;
+`;
+
+const PricingContainer = styled.div.attrs({
+  className: "PricingContainer",
+})`
+  position: absolute;
+  bottom: 50px;
+  text-align: center;
 `;
 
 interface PriceProps {
@@ -41,7 +88,7 @@ const Price = styled.p.attrs({
   ${({ $strikethrough }: PriceProps) =>
     $strikethrough && "text-decoration: line-through;"}
   font-size: ${({ $membersDiscount }: PriceProps) =>
-    $membersDiscount ? "22px" : "18px"};
+    $membersDiscount ? "26px" : "22px"};
 `;
 
 const ProductImage = styled.img.attrs({
@@ -53,37 +100,6 @@ const ProductImage = styled.img.attrs({
   border-radius: 4px;
 `;
 
-interface ProductItemProps {
-  $visible: boolean;
-}
-
-const ProductItem = styled.div.attrs({
-  className: "ProductItem",
-})<ProductItemProps>`
-  background: rgba(255, 255, 255, 0.3);
-  margin-bottom: 0.75rem;
-  padding: 3rem;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transition: opacity 0.2s ease-in-out;
-  width: 100%;
-  max-width: 600px;
-  height: 800px;
-
-  strong {
-    font-size: 3rem;
-    line-height: 1.3;
-    text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
-    text-transform: capitalize;
-    margin: 0 auto 1rem;
-    text-align: center;
-    height: 250px !important;
-  }
-`;
-
 const DescriptionText = styled.p.attrs({
   className: "DescriptionText",
 })`
@@ -93,6 +109,13 @@ const DescriptionText = styled.p.attrs({
   @supports (text-wrap: balance) {
     text-wrap: balance;
   }
+`;
+
+const SVGContainer = styled.div.attrs({ className: "SVGStyled" })`
+  width: 150px;
+  position: absolute;
+  top: 3rem;
+  left: 2rem;
 `;
 
 export default function App() {
@@ -137,28 +160,33 @@ export default function App() {
     return (
       <AppContainer>
         <Title>Commercials Feed</Title>
-        <p>Loading product catalog…</p>
+        <SubTitle>Loading product catalog…</SubTitle>
       </AppContainer>
     );
   }
 
   return (
     <AppContainer>
+      <SVGContainer>
+        <img src={WhatsOnLogo} alt="WhatsOn" />
+      </SVGContainer>
       <Title>Commercials Feed</Title>
-      {!visible && <p>No commercials received yet.</p>}
+      {!visible && <SubTitle>No commercials received yet.</SubTitle>}
       <ProductItem $visible={visible}>
         {visible && (
           <>
             <strong>{name}</strong>
-            <Price $strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
-            <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
-            <Price $membersDiscount>
-              Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}
-            </Price>
+            <ProductImage src={imageBase64} alt={name} />
+            <PricingContainer>
+              <Price $strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
+              <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
+              <Price $membersDiscount>
+                Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}
+              </Price>
+            </PricingContainer>
           </>
         )}
         <DescriptionText>{description}</DescriptionText>
-        <ProductImage src={imageBase64} alt={name} />
       </ProductItem>
     </AppContainer>
   );
