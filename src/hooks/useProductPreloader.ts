@@ -75,7 +75,7 @@ export default function useProductPreloader(
         });
 
         if (newProducts.length > 0) {
-          const updatedProducts = [...loadedProducts, ...newProducts];
+          const updatedProducts = [...oldRealogram, ...newProducts];
           setLoadedProducts(() => updatedProducts);
           localStorage.setItem("products", JSON.stringify(updatedProducts));
           /* eslint-disable-next-line */
