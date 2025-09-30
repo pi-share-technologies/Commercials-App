@@ -3,8 +3,8 @@ import styled from "styled-components";
 import useSocket from "@hooks/useSocket";
 import useProductPreloader from "@hooks/useProductPreloader";
 import useFieldId from "@hooks/useFieldId";
-import MaxWidth from "./styles/responsive";
-import WhatsOnLogo from "./assets/WhatsOnLogo.svg";
+import MaxWidth from "@styles/responsive";
+import WhatsOnLogo from "@assets/WhatsOnLogo.svg";
 
 const AppContainer = styled.main.attrs({
   className: "container",
