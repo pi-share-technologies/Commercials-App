@@ -161,16 +161,7 @@ export default function App() {
     };
   }, []);
 
-  const visible: boolean = !!activeProduct;
-
-  if (!loadedProducts.length) {
-    return (
-      <AppContainer>
-        <Title>Commercials Feed</Title>
-        <SubTitle>Loading product catalog…</SubTitle>
-      </AppContainer>
-    );
-  }
+  const productVisible: boolean = !!activeProduct;
 
   return (
     <AppContainer>
@@ -178,23 +169,29 @@ export default function App() {
         <img src={WhatsOnLogo} alt="WhatsOn" />
       </SVGContainer>
       <Title>Commercials Feed</Title>
-      {!visible && <SubTitle>No commercials received yet.</SubTitle>}
-      <ProductItem $visible={visible}>
-        {visible && (
-          <>
-            <strong>{name}</strong>
-            <ProductImage src={imageBase64} alt={name} />
-            <PricingContainer>
-              <Price $strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
-              <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
-              <Price $membersDiscount>
-                Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}
-              </Price>
-            </PricingContainer>
-          </>
-        )}
-        <DescriptionText>{description}</DescriptionText>
-      </ProductItem>
+      {!loadedProducts.length ? (
+        <SubTitle>
+          {!fieldId ? "Please enter field name" : "Loading product catalog…"}
+        </SubTitle>
+      ) : (
+        <>
+          {!productVisible && <SubTitle>No commercials received yet.</SubTitle>}
+          <ProductItem $visible={productVisible}>
+            <>
+              <strong>{name}</strong>
+              <ProductImage src={imageBase64} alt={name} />
+              <PricingContainer>
+                <Price $strikethrough>₪{price?.toFixed(2) ?? 0}</Price>
+                <Price>Discount: ₪{discountPrice?.toFixed(2) ?? 0}</Price>
+                <Price $membersDiscount>
+                  Members Discount: ₪{memberPrice?.toFixed(2) ?? 0}
+                </Price>
+              </PricingContainer>
+            </>
+            <DescriptionText>{description}</DescriptionText>
+          </ProductItem>
+        </>
+      )}
     </AppContainer>
   );
 }

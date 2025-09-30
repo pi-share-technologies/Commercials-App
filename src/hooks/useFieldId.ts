@@ -47,6 +47,5 @@ export default function useFieldId() {
     setFieldId(() => id);
   };
 
-
   return { fieldName, fieldId, resetFieldName, updateFieldId } as const;
 }
