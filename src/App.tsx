@@ -3,6 +3,7 @@ import styled from "styled-components";
 import useSocket from "@hooks/useSocket";
 import useProductPreloader from "@hooks/useProductPreloader";
 import useFieldId from "@hooks/useFieldId";
+import MaxWidth from "./styles/responsive";
 import WhatsOnLogo from "./assets/WhatsOnLogo.svg";
 
 const AppContainer = styled.main.attrs({
@@ -17,6 +18,11 @@ const AppContainer = styled.main.attrs({
   font-family: sans-serif;
   max-width: 100%;
   overflow-x: hidden;
+
+  ${MaxWidth.tabletBreakpoint`
+    margin: 7rem auto 0;
+    gap: 3rem;
+  `}
 `;
 
 interface ProductItemProps {
@@ -56,6 +62,7 @@ const Title = styled.h1.attrs({
   margin-bottom: 1rem;
   font-size: 35px;
   text-shadow: 1px 1px 2px black;
+  text-align: center;
 `;
 
 const SubTitle = styled.p.attrs({
@@ -136,7 +143,7 @@ export default function App() {
     console.log({ loadedProducts }); /* eslint-disable-line */
   }, [loadedProducts]);
 
-  // Prevent back button from exiting the app on mobile devices
+  //? Prevent back button from exiting the app on mobile devices
   useEffect(() => {
     // Add a dummy entry to the history stack
     window.history.pushState(null, "", window.location.href);
